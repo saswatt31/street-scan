@@ -1,0 +1,47 @@
+{
+  "name": "streetscan",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "jobs": "curl -X POST http://localhost:3000/api/jobs/run -H 'x-cron-secret: dev'",
+    "worker": "node scripts/cron.js",
+    "setup:yolo": "pip install -r services/yolo/requirements.txt && python services/yolo/download_model.py"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.4.0",
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/ssr": "^0.3.0",
+    "@supabase/supabase-js": "^2.44.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.400.0",
+    "next": "14.2.5",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-hot-toast": "^2.4.1",
+    "react-leaflet": "^4.2.1",
+    "recharts": "^2.12.7",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss-animate": "^1.0.7",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.12",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/uuid": "^10.0.0",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
