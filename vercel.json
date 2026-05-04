@@ -1,0 +1,12 @@
+{
+    "experimentalServices": {
+        "frontend": {
+            "routePrefix": "/",
+            "framework": "nextjs"
+        },
+        "yolo": {
+            "entrypoint": "services/yolo",
+            "routePrefix": "/_/yolo"
+        }
+    }
+}
