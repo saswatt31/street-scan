@@ -54,7 +54,6 @@ bin/
 include/
 pydoc/
 share/
-lib/
 lib64/
 /services/yolo/models/
 /services/yolo/runs/
