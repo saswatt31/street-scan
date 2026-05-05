@@ -9,7 +9,7 @@
 import { NextRequest } from 'next/server';
 import { authenticateDevice, unauthorized, created, badRequest, serverError } from '@/lib/middleware/auth';
 import { getServiceClient } from '@/lib/db';
-import { ingestSingleEvent } from '@/app/api/iot/route';
+import { ingestSingleEvent } from '@/lib/services/iot';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: NextRequest) {
