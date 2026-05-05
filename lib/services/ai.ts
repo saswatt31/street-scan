@@ -5,7 +5,7 @@ const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 export async function analyzeImage(buffer: Buffer, mimeType: string) {
   // We need to send this to the YOLO FastAPI service at localhost:8000/analyze
-  const blob = new Blob([buffer], { type: mimeType });
+  const blob = new Blob([new Uint8Array(buffer)], { type: mimeType });
   const formData = new FormData();
   formData.append('file', blob, 'image.jpg');
 

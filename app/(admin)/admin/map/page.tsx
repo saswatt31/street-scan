@@ -1,27 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { supabase, type Report } from '@/lib/supabase';
-import { severityColor, damageLabel, sourceIcon, formatRelative } from '@/lib/utils';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from 'react';
 import { 
-  X, 
-  Filter, 
-  Layers, 
-  AlertTriangle, 
-  Maximize2, 
-  Target, 
+  MapPin, 
+  ShieldAlert, 
+  Clock, 
+  TrendingUp, 
+  Search, 
+  Filter,
+  Activity,
+  Layers,
+  ChevronRight,
   Zap,
-  Map as MapIcon,
-  ShieldAlert,
-  Search,
-  ChevronRight
+  CheckCircle2,
+  AlertTriangle,
+  HardHat
 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import dynamic from 'next/dynamic';
-import { Card, CardContent } from "@/components/ui/card";
+import { createBrowserClient } from '@supabase/ssr';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
   Select, 
   SelectContent, 
@@ -29,209 +28,224 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import toast from 'react-hot-toast';
+import type { Report } from '@/lib/types';
 
-const MapView = dynamic(() => import('@/components/map/MapView'), { ssr: false, loading: () => (
-  <div className="w-full h-full flex flex-col items-center justify-center bg-background/50 backdrop-blur-sm gap-4">
-    <div className="w-12 h-12 rounded-2xl border-2 border-primary border-t-transparent animate-spin" />
-    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Synchronizing Atlas...</span>
-  </div>
-)});
+interface Worker {
+  id: string;
+  email: string;
+  full_name: string;
+}
 
 export default function MapPage() {
-  const [reports, setReports]       = useState<Report[]>([]);
-  const [workers, setWorkers]       = useState<{ id: string, email: string }[]>([]);
-  const [selected, setSelected]     = useState<Report | null>(null);
-  const [filter, setFilter]         = useState<string>('all');
-  const [loading, setLoading]       = useState(true);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Report | null>(null);
+  const [search, setSearch]     = useState('');
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  async function fetchData() {
+    const [reportsRes, workersRes] = await Promise.all([
+      supabase.from('reports').select('*').order('created_at', { ascending: false }),
+      supabase.from('users').select('id, email, full_name').eq('role', 'repair_team')
+    ]);
+
+    if (reportsRes.data) setReports(reportsRes.data as Report[]);
+    if (workersRes.data) setWorkers(workersRes.data as Worker[]);
+    setLoading(false);
+  }
 
   useEffect(() => {
-    async function load() {
-      const [{ data: rData }, { data: wData }] = await Promise.all([
-        supabase.from('reports').select('*').order('created_at', { ascending: false }),
-        supabase.from('users').select('id, email').eq('role', 'repair_team')
-      ]);
-      setReports(rData || []);
-      setWorkers(wData || []);
-      setLoading(false);
-    }
-    load();
+    fetchData();
   }, []);
-
-  const filtered = filter === 'all' ? reports : reports.filter(r =>
-    filter === 'critical' ? r.severity === 'critical' || r.severity === 'high' :
-    filter === 'recurring' ? r.recurrence_count >= 3 :
-    r.source === filter
-  );
 
   async function assignWorker(reportId: string, ticketId: string | null, workerId: string, workerEmail: string) {
     if (!ticketId) {
-      toast.error('ERROR: DATA LOSS - REPORT NOT LINKED TO TICKET');
+      toast.error("NO_TICKET_ID");
       return;
     }
-    await supabase.from('tickets').update({ assigned_to: workerId, status: 'assigned' }).eq('id', ticketId);
-    await supabase.from('reports').update({ status: 'assigned' }).eq('id', reportId);
-    toast.success(`LOG: UNIT DEPLOYED -> ${workerEmail.split('@')[0].toUpperCase()}`);
-    setReports(rs => rs.map(r => r.id === reportId ? { ...r, status: 'assigned' } : r));
-    if (selected?.id === reportId) setSelected(s => s ? { ...s, status: 'assigned' } : null);
+
+    const { error } = await supabase
+      .from('tickets')
+      .update({ assigned_to: workerId, status: 'in_progress' })
+      .eq('id', ticketId);
+
+    if (error) {
+      toast.error("DEPLOYMENT_FAILURE");
+      return;
+    }
+
+    toast.success(`Unit ${workerEmail.split('@')[0]} Dispatched`);
+    fetchData(); // Refresh to update status
   }
 
-  const FILTERS = [
-    { key: 'all',      label: 'ALL SECTORS' },
-    { key: 'critical', label: 'THREAT LVL: HIGH' },
-    { key: 'recurring',label: 'RECURRING' },
-    { key: 'iot',      label: 'IOT NODES' },
-    { key: 'citizen',  label: 'CITIZEN INTEL' },
-    { key: 'camera',   label: 'VISUAL FEEDS' },
-  ];
+  const filtered = reports.filter(r => 
+    r.damage_type.toLowerCase().includes(search.toLowerCase()) || 
+    (r.nearest_landmark ?? '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-6 bg-background">
+        <div className="relative">
+           <div className="w-16 h-16 rounded-full border-4 border-primary/20" />
+           <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin shadow-[0_0_20px_rgba(59,130,246,0.3)]" />
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary animate-pulse">Initializing Geo-Core</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative h-full flex flex-col bg-background overflow-hidden animate-in fade-in duration-700">
-      {/* Floating Filter Bar */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 w-[90%] lg:w-auto">
-        <Card className="bg-card/40 backdrop-blur-2xl border-border/50 shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/10">
-          <CardContent className="p-1.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-            <div className="px-4 py-2 border-r border-border/50 flex items-center gap-2 shrink-0">
-               <Target size={14} className="text-primary animate-pulse" />
-               <span className="text-[10px] font-black uppercase tracking-widest">Active Scan</span>
-            </div>
-            {FILTERS.map(f => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                  filter === f.key 
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
-                    : "hover:bg-white/5 text-muted-foreground"
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-            <Separator orientation="vertical" className="h-6 mx-2 hidden lg:block opacity-30" />
-            <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground shrink-0 hidden lg:block">
-               {filtered.length} NODES IDENTIFIED
-            </div>
-          </CardContent>
-        </Card>
+    <div className="h-full flex flex-col bg-background selection:bg-primary/30">
+      {/* Visual Header */}
+      <div className="px-8 py-8 border-b border-white/[0.05] bg-card/20 backdrop-blur-xl relative overflow-hidden shrink-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
+           <div>
+             <div className="flex items-center gap-3 mb-1">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                   <Layers size={20} className="text-primary" />
+                </div>
+                <h1 className="text-3xl font-black tracking-tighter uppercase leading-none">Live Situation Map</h1>
+             </div>
+             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground pl-11">Geospatial Anomaly Nexus v4.0</p>
+           </div>
+
+           <div className="flex items-center gap-4">
+              <div className="relative group">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="FILTER BY LOCATION..."
+                  className="w-64 pl-10 h-11 bg-black/40 border-white/10 text-[10px] font-black tracking-widest uppercase focus-visible:ring-primary/40 rounded-xl"
+                />
+              </div>
+              <Button variant="ghost" size="icon" className="w-11 h-11 rounded-xl bg-black/40 border border-white/10 text-muted-foreground hover:text-primary">
+                 <Filter size={16} />
+              </Button>
+           </div>
+        </div>
       </div>
 
-      {/* Map Content */}
-      <div className="flex-1 relative">
-        {!loading && (
-          <MapView
-            reports={filtered}
-            selected={selected}
-            onSelect={setSelected}
-          />
-        )}
-        {loading && (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-background/50 backdrop-blur-sm gap-4">
-             <div className="w-12 h-12 rounded-2xl border-2 border-primary border-t-transparent animate-spin" />
-             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Initializing Map Engine...</span>
-          </div>
-        )}
+      <div className="flex-1 flex min-h-0 overflow-hidden">
+        {/* The Map Interface (Mock) */}
+        <div className="flex-1 bg-[#0c0d10] relative group">
+           {/* Static Map Background Mock */}
+           <div className="absolute inset-0 grid-bg opacity-20" />
+           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-[800px] h-[800px] rounded-full bg-primary/5 blur-[120px]" />
+           </div>
 
-        {/* Intelligence Detail Panel (Sliding) */}
-        <div className={cn(
-          "absolute top-6 bottom-6 right-6 w-96 z-30 transition-all duration-500 transform",
-          selected ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
-        )}>
-          {selected && (
-            <Card className="h-full bg-card/60 backdrop-blur-3xl border-border/50 shadow-2xl flex flex-col rounded-3xl ring-1 ring-white/10">
-              <div className="px-6 py-6 border-b border-border/50 flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                   <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center">
-                      <ShieldAlert size={16} className="text-primary" />
-                   </div>
-                   <div>
-                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Intelligence Detail</span>
-                     <h3 className="text-sm font-black uppercase tracking-tighter">Report ID: {selected.id.slice(0, 8)}</h3>
-                   </div>
+           {/* Report Pins */}
+           {filtered.map(report => (
+              <div
+                key={report.id}
+                onClick={() => setSelected(report)}
+                className={cn(
+                  "absolute w-4 h-4 cursor-pointer transition-all duration-300 group/pin",
+                  selected?.id === report.id ? "scale-150 z-20" : "hover:scale-125 z-10"
+                )}
+                style={{ 
+                  left: `${((report.longitude + 180) % 1) * 100}%`, 
+                  top: `${((report.latitude + 90) % 1) * 100}%` 
+                }}
+              >
+                 <div className={cn(
+                   "w-full h-full rounded-full ring-2 ring-white shadow-2xl animate-in zoom-in duration-500",
+                   report.severity === 'critical' ? 'bg-red-500 shadow-red-500/50' : 
+                   report.severity === 'high' ? 'bg-orange-500 shadow-orange-500/50' : 'bg-emerald-500 shadow-emerald-500/50'
+                 )} />
+                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover/pin:opacity-100 transition-opacity bg-black/80 backdrop-blur-md px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest whitespace-nowrap text-white">
+                   {report.damage_type} :: {report.nearest_landmark}
                  </div>
-                 <Button variant="ghost" size="icon" onClick={() => setSelected(null)} className="rounded-xl hover:bg-white/5">
-                   <X size={18} />
-                 </Button>
               </div>
+           ))}
+        </div>
 
-              <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-thin scrollbar-thumb-white/10">
-                {/* Visual Evidence */}
-                {selected.image_url && (
-                  <div className="group relative aspect-square rounded-[32px] overflow-hidden bg-black ring-1 ring-white/10 shadow-2xl">
+        {/* Intelligence Side-Terminal */}
+        {selected ? (
+          <div className="w-[440px] flex flex-col border-l border-white/[0.05] bg-card/40 backdrop-blur-3xl animate-in slide-in-from-right duration-500 overflow-hidden">
+            <div className="p-8 border-b border-white/[0.05] bg-black/20 relative shrink-0">
+               <Button 
+                 variant="ghost" 
+                 size="icon" 
+                 onClick={() => setSelected(null)}
+                 className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-white/5"
+               >
+                 <ChevronRight size={16} />
+               </Button>
+               <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Anomaly Selected</span>
+               </div>
+               <h2 className="text-3xl font-black uppercase tracking-tighter mb-1 leading-none">{selected.damage_type}</h2>
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{selected.nearest_landmark}</p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-8 space-y-10 scrollbar-thin scrollbar-thumb-white/5">
+                {/* Visual Intel */}
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Visual Evidence</Label>
+                  <div className="aspect-video rounded-[32px] overflow-hidden bg-black/40 ring-1 ring-white/5 relative group shadow-2xl">
                     <img 
                       src={selected.image_url} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                      alt="Intelligence Capture" 
+                      alt="Damage" 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    <div className="absolute bottom-6 left-6 right-6">
-                       <Badge className={cn("text-[9px] font-black uppercase px-2 mb-2 border-none", severityColor(selected.severity))}>
-                         {selected.severity} INTENSITY
-                       </Badge>
-                       <h4 className="text-xl font-black tracking-tighter uppercase text-white leading-tight">
-                         {damageLabel(selected.damage_type)}
-                       </h4>
-                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+                    <Badge className={cn(
+                      "absolute top-4 right-4 text-[10px] font-black border-none px-3 py-1",
+                      selected.severity === 'critical' ? 'bg-red-500 text-white' : 'bg-primary'
+                    )}>
+                      {selected.severity.toUpperCase()}
+                    </Badge>
                   </div>
-                )}
+                </div>
 
-                {/* Technical Coordinates */}
-                <div className="space-y-4">
-                   <Label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 opacity-60">
-                     <Target size={12} className="text-primary" /> Geospatial Coordinates
-                   </Label>
-                   <Card className="bg-background/40 border-none ring-1 ring-white/5 p-4 rounded-2xl">
-                      <p className="text-[11px] font-mono font-bold tracking-widest uppercase">
-                        {selected.address ?? `${selected.latitude?.toFixed(6)}° N, ${selected.longitude?.toFixed(6)}° E`}
-                      </p>
+                {/* Telemetry Matrix */}
+                <div className="grid grid-cols-2 gap-4">
+                   <Card className="bg-black/40 border-none ring-1 ring-white/10 p-5 rounded-[24px]">
+                      <div className="flex items-center gap-2 mb-3">
+                         <Zap size={12} className="text-primary" />
+                         <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">AI Confidence</span>
+                      </div>
+                      <div className="text-2xl font-black font-mono tracking-tighter">{(selected.ai_confidence * 100).toFixed(1)}%</div>
+                      <div className="mt-2 h-1 bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary" 
+                          style={{ width: `${selected.ai_confidence * 100}%` }} 
+                        />
+                      </div>
+                   </Card>
+
+                   <Card className="bg-black/40 border-none ring-1 ring-white/10 p-5 rounded-[24px]">
+                      <div className="flex items-center gap-2 mb-3">
+                         <TrendingUp size={12} className="text-orange-400" />
+                         <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Recurrence</span>
+                      </div>
+                      <div className="text-2xl font-black font-mono tracking-tighter">{selected.recurrence_count ?? 0}X</div>
+                      <p className="text-[8px] font-bold text-muted-foreground mt-1 uppercase">Regional Cluster</p>
                    </Card>
                 </div>
 
-                {/* Telemetry Grid */}
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: 'Source Origin', value: selected.source, icon: MapIcon },
-                    { label: 'Current State', value: selected.status.replace('_', ' '), icon: Zap },
-                    { label: 'Detection Age', value: formatRelative(selected.created_at), icon: Layers },
-                    { label: 'Recurrence Count', value: `${selected.recurrence_count}x`, icon: AlertTriangle },
-                  ].map(({ label, value, icon: Icon }) => (
-                    <Card key={label} className="bg-card/30 border-none ring-1 ring-white/5 p-3.5 rounded-2xl shadow-sm">
-                       <div className="flex items-center gap-2 mb-1.5 opacity-50">
-                          <Icon size={10} />
-                          <span className="text-[8px] font-black uppercase tracking-widest">{label}</span>
-                       </div>
-                       <p className="text-[10px] font-black uppercase tracking-tighter truncate">{value}</p>
-                    </Card>
-                  ))}
-                </div>
-
-                {/* AI Confidence Index */}
-                {selected.ai_validated && (
-                  <div className="p-5 rounded-3xl bg-primary/5 border border-primary/10">
-                    <div className="flex justify-between items-center mb-3">
-                       <span className="text-[10px] font-black uppercase tracking-widest">AI Audit Confidence</span>
-                       <span className="text-xs font-black font-mono text-primary">{Math.round(selected.ai_confidence * 100)}%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                       <div 
-                         className="h-full bg-primary rounded-full transition-all duration-1000" 
-                         style={{ width: `${selected.ai_confidence * 100}%` }} 
-                       />
-                    </div>
-                  </div>
-                )}
-
                 {/* Assignment Vector */}
-                {selected.ticket_id && (selected.status === 'open' || selected.status === 'reported') && (
+                {selected.ticket_id && (selected.status === 'pending' || selected.status === 'reported') && (
                   <div className="space-y-4 pt-4 border-t border-white/5">
                      <div className="space-y-3">
                        <Label className="text-[10px] font-black uppercase tracking-widest">Field Deployment</Label>
                        <Select
                          onValueChange={(val) => {
                            const worker = workers.find(w => w.id === val);
-                           if (worker) assignWorker(selected.id, selected.ticket_id, worker.id, worker.email);
+                           if (worker) assignWorker(selected.id, selected.ticket_id || null, worker.id, worker.email);
                          }}
                        >
                          <SelectTrigger className="bg-background/50 border-none ring-1 ring-white/10 h-12 rounded-2xl text-[10px] font-black tracking-widest uppercase shadow-xl">
@@ -239,19 +253,36 @@ export default function MapPage() {
                          </SelectTrigger>
                          <SelectContent className="bg-card border-border">
                             {workers.map(w => (
-                              <SelectItem key={w.id} value={w.id} className="text-[10px] font-black uppercase tracking-widest">
-                                {w.email.split('@')[0]} [FIELD UNIT]
-                              </SelectItem>
+                               <SelectItem key={w.id} value={w.id} className="text-[10px] font-bold uppercase tracking-widest py-3">
+                                  {w.email}
+                               </SelectItem>
                             ))}
                          </SelectContent>
                        </Select>
                      </div>
                   </div>
                 )}
-              </div>
-            </Card>
-          )}
-        </div>
+
+                {/* Data Metadata */}
+                <div className="space-y-4 bg-black/20 p-6 rounded-[24px] border border-white/5">
+                   <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</span>
+                      <Badge variant="outline" className="text-[10px] font-black uppercase border-primary/20 text-primary bg-primary/5">{selected.status}</Badge>
+                   </div>
+                   <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Coordinates</span>
+                      <span className="text-[10px] font-mono font-bold text-white/70">{selected.latitude.toFixed(4)}, {selected.longitude.toFixed(4)}</span>
+                   </div>
+                </div>
+            </div>
+          </div>
+        ) : (
+          <div className="w-[440px] flex flex-col items-center justify-center p-12 text-center opacity-20 border-l border-white/[0.05] shrink-0">
+             <Activity size={60} className="mb-6" />
+             <h3 className="text-xl font-black uppercase tracking-widest">Awaiting Input</h3>
+             <p className="text-[10px] font-bold mt-4 uppercase tracking-widest leading-relaxed">Select a geolocated anomaly on the map to access tactical intelligence.</p>
+          </div>
+        )}
       </div>
     </div>
   );

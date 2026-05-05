@@ -1,20 +1,19 @@
 import { getServiceClient } from '../db';
 
 /**
- * Marks a notification as read.
+ * Marks notifications as read.
  */
-export async function markRead(id: string) {
+export async function markRead(userId: string, ids: string[]) {
   const sb = getServiceClient();
   
-  const { data, error } = await sb
+  const { error } = await sb
     .from('notifications')
     .update({ is_read: true, read_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single();
+    .eq('user_id', userId)
+    .in('id', ids);
 
   if (error) throw error;
-  return data;
+  return true;
 }
 
 /**

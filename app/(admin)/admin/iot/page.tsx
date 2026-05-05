@@ -1,5 +1,5 @@
 'use client';
-
+export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { 
   Radio, 
@@ -55,7 +55,7 @@ interface Device {
   alertCount: number;
   totalReports: number;
   connectivity: 'wifi' | 'sim';
-  owner_id?: string;
+  owner_id?: string | null;
 }
 
 interface Worker {
@@ -314,8 +314,8 @@ export default function IotPage() {
                           <div className="flex items-center gap-5">
                              <div className="flex flex-col">
                                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-0.5">Energy</span>
-                               <span className={cn("text-xs font-black font-mono", device.battery < 20 ? 'text-red-500' : 'text-white')}>
-                                 {device.battery}%
+                               <span className={cn("text-xs font-black font-mono", (device.battery ?? 0) < 20 ? 'text-red-500' : 'text-white')}>
+                                 {device.battery ?? 0}%
                                </span>
                              </div>
                              <Separator orientation="vertical" className="h-8 opacity-10" />
@@ -389,8 +389,8 @@ export default function IotPage() {
                         <div className="space-y-3">
                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Repair Team Email</label>
                            <Select 
-                              onValueChange={(val) => assignWorker(selected.id, val)}
-                              value={selected.owner_id || "none"}
+                              onValueChange={(val: string | null) => { if (selected && val) assignWorker(selected.id, val); }}
+                              value={selected?.owner_id || "none"}
                            >
                               <SelectTrigger className="bg-black/60 border-white/10 h-12 text-[11px] font-black tracking-widest uppercase rounded-2xl focus:ring-primary shadow-inner text-white">
                                  <SelectValue placeholder="DEPLOY FIELD UNIT..." />
@@ -426,12 +426,12 @@ export default function IotPage() {
                <div className="space-y-5 bg-black/20 p-8 rounded-[32px] ring-1 ring-white/5 relative overflow-hidden">
                   <div className="flex justify-between items-center relative z-10">
                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Power Cell Life</span>
-                     <Badge variant="outline" className={cn("text-[10px] font-black border-none px-0", selected.battery < 20 ? 'text-red-400' : 'text-primary')}>
-                        {selected.battery}%
+                     <Badge variant="outline" className={cn("text-[10px] font-black border-none px-0", (selected.battery ?? 0) < 20 ? 'text-red-400' : 'text-primary')}>
+                        {selected.battery ?? 0}%
                      </Badge>
                   </div>
                   <Progress 
-                    value={selected.battery} 
+                    value={selected.battery ?? 0} 
                     className="h-2 rounded-full bg-white/5 ring-1 ring-white/5" 
                   />
                   <div className="grid grid-cols-2 gap-4">
@@ -441,8 +441,8 @@ export default function IotPage() {
                      </div>
                      <div className="flex flex-col gap-1">
                         <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Cell Health</span>
-                        <span className={cn("text-[10px] font-bold uppercase", selected.battery < 20 ? 'text-red-500' : 'text-emerald-400')}>
-                           {selected.battery < 20 ? 'Critical' : 'Stable'}
+                        <span className={cn("text-[10px] font-bold uppercase", (selected.battery ?? 0) < 20 ? 'text-red-500' : 'text-emerald-400')}>
+                           {(selected.battery ?? 0) < 20 ? 'Critical' : 'Stable'}
                         </span>
                      </div>
                   </div>
@@ -473,7 +473,7 @@ export default function IotPage() {
                                  key={i} 
                                  className={cn("flex-1 rounded-full transition-all duration-300", col, i < liveVib.length ? "opacity-100" : "opacity-10")}
                                  style={{ height: `${h}%` }} 
-                               />
+                                />
                              );
                            })}
                          </div>

@@ -96,7 +96,7 @@ export function withAuth(
       {
         cookies: {
           getAll() { return req.cookies.getAll() },
-          setAll(cookiesToSet) {
+          setAll(cookiesToSet: any[]) {
             cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value));
             supabaseResponse = NextResponse.next({ request: req });
             cookiesToSet.forEach(({ name, value, options }) =>

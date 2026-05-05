@@ -14,10 +14,18 @@ export async function createTicketFromReport(report: any) {
   else if (report.severity_score >= 70) priority = 'high';
   else if (report.severity_score < 30) priority = 'low';
 
+  // Generate ticket number: SS-YYYYMMDD-RAND
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const randStr = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  const ticket_number = `SS-${dateStr}-${randStr}`;
+
   const { data: ticket, error } = await sb.from('tickets').insert({
     report_id: report.id,
     cluster_id: report.cluster_id || null,
-    status: 'open',
+    ticket_number,
+    title: `Repair: ${report.damage_type} at ${report.nearest_landmark || 'Location'}`,
+    description: report.description || `Repair required for ${report.damage_type} detected at ${report.latitude}, ${report.longitude}.`,
+    status: 'reported',
     priority,
     metadata: {
       source: report.source,

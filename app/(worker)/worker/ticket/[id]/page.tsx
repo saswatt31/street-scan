@@ -21,11 +21,12 @@ import {
   Zap,
   ShieldAlert,
   History,
-  Navigation
+  Navigation,
+  Signal
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -145,17 +146,13 @@ export default function WorkerTicketDetail({ params }: { params: { id: string } 
         
         {/* Navigation Bar */}
         <nav className="mb-10 flex items-center justify-between bg-card/30 backdrop-blur-xl p-2 pr-6 rounded-2xl ring-1 ring-white/5 shadow-2xl">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            asChild 
-            className="group text-[10px] font-black uppercase tracking-widest hover:bg-white/5 hover:text-primary transition-all px-4 h-11 rounded-xl"
+          <Link 
+            href="/worker/dashboard" 
+            className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), "group text-[10px] font-black uppercase tracking-widest hover:bg-white/5 hover:text-primary transition-all px-4 h-11 rounded-xl flex items-center")}
           >
-            <Link href="/worker/dashboard">
-              <ChevronLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform" />
-              Return to Command
-            </Link>
-          </Button>
+            <ChevronLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform" />
+            Return to Command
+          </Link>
           <div className="flex items-center gap-4">
              <div className="flex flex-col items-end">
                 <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground opacity-50">MISSION ID</span>

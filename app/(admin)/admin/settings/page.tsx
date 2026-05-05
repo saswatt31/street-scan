@@ -14,7 +14,8 @@ import {
   Zap,
   User,
   Settings as SettingsIcon,
-  ChevronRight
+  ChevronRight,
+  RefreshCcw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';

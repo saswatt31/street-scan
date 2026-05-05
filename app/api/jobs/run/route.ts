@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const [jobsProcessed, slaBreaches] = await Promise.all([
-      processPendingJobs(50),
+      processPendingJobs(),
       checkSlaBreaches(),
     ]);
 
@@ -49,9 +49,13 @@ export const GET = withAuth(async (req: NextRequest, _ctx: AuthContext) => {
     if (error) throw error;
 
     // Summary counts
-    const { data: counts } = await sb.rpc('jobs_summary').select('*').single()
-      .then(r => r)
-      .catch(() => ({ data: null }));
+    let counts = null;
+    try {
+      const { data: rpcData } = await sb.rpc('jobs_summary').single();
+      counts = rpcData;
+    } catch (e) {
+      console.warn('Jobs summary RPC failed or not implemented');
+    }
 
     return ok({ jobs: data, summary: counts });
   } catch (e) {

@@ -2,14 +2,15 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
-import { MapPin, Image as ImageIcon, CheckCircle, AlertTriangle, Clock, Hammer, ListChecks, Zap, ArrowRight, User, Activity } from 'lucide-react';
+import { MapPin, Image as ImageIcon, CheckCircle, AlertTriangle, Clock, Hammer, ListChecks, Zap, ArrowRight, User, Activity, Signal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 export default function WorkerDashboard() {
   const router = useRouter();
@@ -122,7 +123,7 @@ export default function WorkerDashboard() {
         </div>
         <div className="flex flex-col items-end gap-1">
           <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20 gap-1.5 py-1 px-3 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+            <Signal size={10} className="text-blue-500" />
             <span className="text-[10px] font-black tracking-tighter uppercase">Net Active</span>
           </Badge>
           <span className="text-[8px] font-mono text-gray-600 uppercase">Ver: 2.4.0-REL</span>
@@ -253,12 +254,13 @@ export default function WorkerDashboard() {
 
                   <Separator className="bg-white/5 mb-5" />
 
-                  <Button asChild className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl shadow-blue-900/20 transition-all active:scale-[0.98]">
-                    <Link href={`/worker/ticket/${ticket.id}`} className="flex items-center justify-center gap-3">
-                      Initialize Resolution
-                      <ArrowRight size={18} />
-                    </Link>
-                  </Button>
+                  <Link 
+                    href={`/worker/ticket/${ticket.id}`} 
+                    className={cn(buttonVariants(), "w-full bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl shadow-blue-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3")}
+                  >
+                    Initialize Resolution
+                    <ArrowRight size={18} />
+                  </Link>
                 </CardContent>
               </Card>
             );

@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { supabase, type Report, type Ticket } from '@/lib/supabase';
 import { severityColor, severityDot, statusColor, sourceIcon, damageLabel, formatRelative, cn } from '@/lib/utils';
@@ -24,7 +25,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -74,7 +75,7 @@ export default function DashboardPage() {
   const open     = stats.pending;
   const resolved = stats.resolved;
   const critical = stats.critical;
-  const recurring = reports.filter(r => r.recurrence_count >= 3).length;
+  const recurring = reports.filter(r => (r.recurrence_count ?? 0) >= 3).length;
 
   const pieData = [
     { name: 'Low',      value: reports.filter(r => r.severity === 'low').length,      color: '#10b981' },
@@ -275,12 +276,10 @@ export default function DashboardPage() {
               <CardTitle className="text-lg font-black uppercase tracking-tighter">Recent System Activity</CardTitle>
               <CardDescription className="text-xs font-medium text-muted-foreground">Latest infrastructure reports and detections</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" asChild className="text-xs font-black uppercase tracking-widest">
-              <Link href="/admin/tickets">
-                View All Logs
-                <ChevronRight size={16} className="ml-1" />
-              </Link>
-            </Button>
+            <Link href="/admin/tickets" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), "text-xs font-black uppercase tracking-widest")}>
+              View All Logs
+              <ChevronRight size={16} className="ml-1" />
+            </Link>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
