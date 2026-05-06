@@ -95,15 +95,37 @@ export async function validateVisualDamage(buffer: Buffer, mimeType: string, opt
       jsonStr = jsonMatch[1] || jsonMatch[0];
     }
     
-    return JSON.parse(jsonStr);
+    const parsed = JSON.parse(jsonStr);
+
+    // ── Sanitization ──
+    // Ensure severity is a valid enum value
+    const validSeverities = ['low', 'medium', 'high', 'critical'];
+    if (!validSeverities.includes(parsed.severity)) {
+      parsed.severity = 'medium'; 
+    }
+
+    // Ensure damage_type is valid (fallback to 'other' or user-provided type)
+    const validTypes = ['pothole', 'crack', 'subsidence', 'structural', 'flooding', 'other'];
+    if (!validTypes.includes(parsed.damage_type)) {
+      parsed.damage_type = validTypes.includes(options.damage_type) ? options.damage_type : 'other';
+    }
+
+    // Ensure confidence is 0-1
+    if (parsed.confidence > 1) parsed.confidence = parsed.confidence / 100;
+    parsed.confidence = Math.max(0, Math.min(1, parsed.confidence || 0));
+
+    // Ensure score is 0-100
+    parsed.score = Math.max(0, Math.min(100, Math.round(parsed.score || 50)));
+
+    return parsed;
   } catch (error: any) {
-    console.error('Gemini error or failed to parse response:', error.message);
+    console.error('[AI] Gemini error or failed to parse response:', error.message);
     // Fallback response if AI fails
     return {
       damage: true, // Optimistic fallback if AI is flaky
       explanation: "AI validation encountered an error, but proceeding with caution.",
-      damage_type: options.damage_type,
-      severity: "medium",
+      damage_type: options.damage_type as any,
+      severity: "medium" as any,
       score: 50,
       confidence: 0.5,
       notes: "System fallback due to AI service error."

@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Verified -> Persist to Database
-    console.log("[Orchestrator] Damage verified. Saving report + ticket...");
+    console.log("[Orchestrator] Damage verified. Saving report...");
     const sb = getServiceClient();
 
     // Upload image to Supabase Storage
@@ -72,10 +72,10 @@ export async function POST(req: NextRequest) {
         const { data } = sb.storage.from('report-images').getPublicUrl(image_path);
         image_url = data.publicUrl;
       } else {
-        console.error("[Orchestrator] Storage upload failed:", upErr);
+        console.error("[Orchestrator] Storage upload failed:", upErr.message);
       }
-    } catch (upErr) {
-      console.error("[Orchestrator] Storage error:", upErr);
+    } catch (upErr: any) {
+      console.error("[Orchestrator] Storage error:", upErr.message);
     }
 
     // Note: In production, use authenticated user ID
@@ -101,19 +101,38 @@ export async function POST(req: NextRequest) {
       last_reported_at: new Date().toISOString(),
     }).select().single();
 
-    if (reportErr) throw reportErr;
+    if (reportErr) {
+      console.error("[Orchestrator] Database insert failed:", reportErr.message, reportErr.details);
+      throw reportErr;
+    }
+
+    console.log("[Orchestrator] Report saved successfully. Creating ticket...");
 
     // 4. Auto-generate Ticket
-    const ticket = await createTicketFromReport(report);
+    try {
+      const ticket = await createTicketFromReport(report);
+      console.log("[Orchestrator] Ticket created successfully:", ticket.ticket_number);
 
-    return created({
-      verified: true,
-      report_id: report.id,
-      ticket_id: ticket.id,
-      severity: evaluation.severity,
-      score: evaluation.score,
-      explanation: evaluation.explanation
-    });
+      return created({
+        verified: true,
+        report_id: report.id,
+        ticket_id: ticket.id,
+        severity: evaluation.severity,
+        score: evaluation.score,
+        explanation: evaluation.explanation
+      });
+    } catch (ticketErr: any) {
+      console.error("[Orchestrator] Ticket creation failed:", ticketErr.message);
+      // Still return success for report but mention ticket failure
+      return created({
+        verified: true,
+        report_id: report.id,
+        severity: evaluation.severity,
+        score: evaluation.score,
+        explanation: evaluation.explanation,
+        warning: "Report saved, but ticket generation failed: " + ticketErr.message
+      });
+    }
 
   } catch (e) {
     console.error("[Orchestrator] Critical error:", e);
