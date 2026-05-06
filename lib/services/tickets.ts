@@ -9,8 +9,8 @@ export async function createTicketFromReport(report: any) {
   const sb = getServiceClient();
   
   // Calculate priority based on severity score
-  let priority: 'low' | 'medium' | 'high' | 'emergency' = 'medium';
-  if (report.severity_score >= 90) priority = 'emergency';
+  let priority: 'low' | 'medium' | 'high' | 'critical' = 'medium';
+  if (report.severity_score >= 90) priority = 'critical';
   else if (report.severity_score >= 70) priority = 'high';
   else if (report.severity_score < 30) priority = 'low';
 

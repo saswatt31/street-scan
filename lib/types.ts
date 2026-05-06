@@ -1,25 +1,22 @@
 export type UserRole = 'admin' | 'repair_team' | 'citizen';
 
 export type TicketStatus = 
-  | 'open' 
   | 'reported'
   | 'verified' 
   | 'assigned' 
   | 'in_progress' 
   | 'resolved' 
-  | 'rejected' 
-  | 'archived';
+  | 'rejected';
 
 export type DamageType = 
   | 'pothole' 
   | 'crack' 
-  | 'faded_marking' 
-  | 'debris' 
-  | 'subsidence' 
-  | 'manhole_issue' 
+  | 'subsidence'
+  | 'structural'
+  | 'flooding'
   | 'other';
 
-export type Priority = 'low' | 'medium' | 'high' | 'critical' | 'emergency';
+export type Priority = 'low' | 'medium' | 'high' | 'critical';
 
 export interface Report {
   id: string;
@@ -31,7 +28,7 @@ export interface Report {
   severity_score: number;
   image_url?: string;
   image_path?: string;
-  status: 'pending' | 'validated' | 'rejected' | 'reported' | 'assigned' | 'resolved';
+  status: 'pending' | 'validated' | 'rejected' | 'clustered' | 'assigned' | 'resolved';
   report_id?: string; // used in some contexts as alias for id
   ticket_id?: string;
   reporter_id?: string;
