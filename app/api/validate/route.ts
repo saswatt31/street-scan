@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import crypto from 'crypto';
 import { validateVisualDamage } from '@/lib/services/ai';
 import { getServiceClient } from '@/lib/db';
 import { createTicketFromReport } from '@/lib/services/tickets';
