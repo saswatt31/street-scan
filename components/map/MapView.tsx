@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import type { Report } from '@/lib/supabase';
+import type { Report } from '@/lib/types';
 
 const SEVERITY_COLORS: Record<string, string> = {
   low: '#34d399', medium: '#fbbf24', high: '#f97316', critical: '#ef4444',

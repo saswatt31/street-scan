@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { 
   MapPin, 
   ShieldAlert, 
@@ -34,10 +35,20 @@ import toast from 'react-hot-toast';
 import type { Report } from '@/lib/types';
 
 interface Worker {
-  id: string;
-  email: string;
   full_name: string;
 }
+
+const MapView = dynamic(() => import('@/components/map/MapView'), { 
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full flex items-center justify-center bg-[#0c0d10]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/50">Loading Cartography</span>
+      </div>
+    </div>
+  )
+});
 
 export default function MapPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -137,38 +148,13 @@ export default function MapPage() {
       </div>
 
       <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* The Map Interface (Mock) */}
-        <div className="flex-1 bg-[#0c0d10] relative group">
-           {/* Static Map Background Mock */}
-           <div className="absolute inset-0 grid-bg opacity-20" />
-           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-[800px] h-[800px] rounded-full bg-primary/5 blur-[120px]" />
-           </div>
-
-           {/* Report Pins */}
-           {filtered.map(report => (
-              <div
-                key={report.id}
-                onClick={() => setSelected(report)}
-                className={cn(
-                  "absolute w-4 h-4 cursor-pointer transition-all duration-300 group/pin",
-                  selected?.id === report.id ? "scale-150 z-20" : "hover:scale-125 z-10"
-                )}
-                style={{ 
-                  left: `${((report.longitude + 180) % 1) * 100}%`, 
-                  top: `${((report.latitude + 90) % 1) * 100}%` 
-                }}
-              >
-                 <div className={cn(
-                   "w-full h-full rounded-full ring-2 ring-white shadow-2xl animate-in zoom-in duration-500",
-                   report.severity === 'critical' ? 'bg-red-500 shadow-red-500/50' : 
-                   report.severity === 'high' ? 'bg-orange-500 shadow-orange-500/50' : 'bg-emerald-500 shadow-emerald-500/50'
-                 )} />
-                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover/pin:opacity-100 transition-opacity bg-black/80 backdrop-blur-md px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest whitespace-nowrap text-white">
-                   {report.damage_type} :: {report.nearest_landmark}
-                 </div>
-              </div>
-           ))}
+        {/* The Map Interface */}
+        <div className="flex-1 bg-[#0c0d10] relative overflow-hidden">
+           <MapView 
+             reports={filtered} 
+             selected={selected} 
+             onSelect={setSelected} 
+           />
         </div>
 
         {/* Intelligence Side-Terminal */}
