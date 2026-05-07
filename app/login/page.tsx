@@ -67,8 +67,8 @@ export default function LoginPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         
         {/* Branding header */}
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 p-2 flex items-center justify-center shadow-2xl">
+        <div className="flex justify-center mb-10">
+          <div className="w-24 h-24 rounded-[32px] bg-white/5 p-3 flex items-center justify-center shadow-3xl">
             <img src="/logo.png" alt="StreetScan Logo" className="w-full h-full object-contain" />
           </div>
         </div>
