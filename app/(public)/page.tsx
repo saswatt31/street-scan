@@ -22,8 +22,8 @@ export default function LandingPage() {
       {/* Header */}
       <header className="relative z-50 flex items-center justify-between px-6 py-5 backdrop-blur-md border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/20 group">
-            <Globe className="w-6 h-6 text-white group-hover:rotate-12 transition-transform" />
+          <div className="w-10 h-10 rounded-xl bg-white/10 p-1.5 flex items-center justify-center shadow-lg shadow-blue-500/10 group">
+            <img src="/logo.png" alt="StreetScan Logo" className="w-full h-full object-contain group-hover:scale-110 transition-transform" />
           </div>
           <div>
             <span className="text-xl font-bold tracking-tight block leading-none">StreetScan</span>
@@ -112,7 +112,7 @@ export default function LandingPage() {
           SYSTEMS OPERATIONAL
         </div>
         <div className="hidden sm:block">
-          © 2026 StreetScan Hack
+          © 2026 StreetScan
         </div>
       </footer>
     </div>

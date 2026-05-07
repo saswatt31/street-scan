@@ -38,8 +38,8 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
 
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-8 border-b border-border mb-4">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-            <Shield size={20} strokeWidth={2.5} />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 p-1 shadow-lg shadow-primary/20">
+            <img src="/logo.png" alt="StreetScan Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <div className="text-sm font-black tracking-tighter uppercase leading-none">

@@ -67,8 +67,10 @@ export default function LoginPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         
         {/* Branding header */}
-        <div className="flex justify-center text-blue-500 mb-6">
-          <HardHat size={48} strokeWidth={1.5} />
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-white/5 p-2 flex items-center justify-center shadow-2xl">
+            <img src="/logo.png" alt="StreetScan Logo" className="w-full h-full object-contain" />
+          </div>
         </div>
         <h2 className="text-center text-3xl font-extrabold text-white tracking-tight">
           Employee Portal
