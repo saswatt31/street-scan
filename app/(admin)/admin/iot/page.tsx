@@ -291,7 +291,7 @@ export default function IotPage() {
                              <div className="flex items-center gap-2">
                                 <span className={cn("w-1.5 h-1.5 rounded-full", device.status === 'online' ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600')} />
                                 <span className="text-[9px] font-mono font-bold tracking-widest text-muted-foreground opacity-50 block uppercase truncate">
-                                  ID: {device.id.slice(0, 15)}...
+                                  ID: {device.id.slice(-5)}
                                 </span>
                              </div>
                            </div>
@@ -355,7 +355,7 @@ export default function IotPage() {
                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Live Data Stream</span>
                </div>
                <h2 className="text-3xl font-black uppercase tracking-tighter mb-1 text-white">{selected.name}</h2>
-               <p className="text-[10px] font-mono font-bold text-muted-foreground opacity-40 uppercase tracking-[0.2em] break-all">ID::{selected.id}</p>
+               <p className="text-[10px] font-mono font-bold text-muted-foreground opacity-40 uppercase tracking-[0.2em] break-all">ID::{selected.id.slice(-5)}</p>
             </div>
 
             <div className="flex-1 overflow-y-auto p-10 space-y-12 scrollbar-thin scrollbar-thumb-white/5">

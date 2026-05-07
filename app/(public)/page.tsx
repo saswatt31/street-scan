@@ -22,7 +22,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="relative z-50 flex items-center justify-between px-6 py-5 backdrop-blur-md border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/10 p-1.5 flex items-center justify-center shadow-lg shadow-blue-500/10 group">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 p-1 flex items-center justify-center shadow-lg shadow-blue-500/10 group">
             <img src="/logo.png" alt="StreetScan Logo" className="w-full h-full object-contain group-hover:scale-110 transition-transform" />
           </div>
           <div>
