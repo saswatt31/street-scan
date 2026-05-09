@@ -30,7 +30,7 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
 # Load a pretrained YOLOv8n model
 model = YOLO('yolov8n.pt')
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"status": "online", "model": "yolov8n"}
 
